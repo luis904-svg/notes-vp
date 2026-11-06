@@ -1,0 +1,26 @@
+/* Notes VP : thème vert, champs propres à la VP */
+:root, :root[data-theme="light"] {
+  --accent: #0F7A55; --accent-focus: #12916A; --accent-soft: rgba(15, 122, 85, 0.1);
+  --blob1: rgba(18, 145, 106, 0.14); --blob2: rgba(52, 199, 89, 0.10); --blob3: rgba(0, 150, 200, 0.08);
+}
+.ob-install { --accent: #0F7A55; --accent-focus: #12916A; --accent-soft: rgba(15, 122, 85, 0.1);
+  --blob1: rgba(18, 145, 106, 0.14); --blob2: rgba(52, 199, 89, 0.10); --blob3: rgba(0, 150, 200, 0.08); }
+
+/* En VP, pas de coefficient ni de part de TP : moyenne simple des TS et TA */
+.row2:has(#f-coef) > .field:has(#f-coef) { display: none; }
+.row2:has(#f-coef) { grid-template-columns: 1fr; }
+.chips[aria-label="Coefficients fréquents"] { display: none; }
+.srow .sfields label:has([data-k="tp"]) { display: none; }
+#settings th:nth-child(4), #settings td:has(input[data-k="tp"]) { display: none; }
+
+/* Examens du certificat (11e) */
+.exam-list { display: flex; flex-direction: column; gap: 10px; }
+.exam-row { background: var(--bg); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.exam-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.exam-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; align-items: end; }
+.exam-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.exam-fields input { padding: 8px 10px; min-height: 40px; font-size: 16px; text-align: center; background: var(--surface); }
+.exam-out { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.exam-out .mono { font-size: 20px; font-weight: 600; }
+.exam-final.crit { color: var(--crit); }
+@media (max-width: 520px) { .exam-fields { grid-template-columns: 1fr 1fr; } .exam-out { flex-direction: row; justify-content: space-between; grid-column: span 2; } }

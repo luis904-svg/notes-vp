@@ -28,3 +28,28 @@
 /* Synchronisation */
 .sy-code { font-size: 22px; font-weight: 600; letter-spacing: 0.06em; padding: 12px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); text-align: center; user-select: all; -webkit-user-select: all; }
 .ob-sync { margin-top: 18px; font-size: 16px; }
+
+/* Travaux assimilés (TA) et leurs ETA */
+.ta-fields { display: flex; flex-direction: column; gap: 12px; }
+.ta-fields[hidden], .ta-new[hidden], .ta-pts[hidden], .ta-scale[hidden] { display: none; }
+.ta-new { display: flex; flex-direction: column; gap: 10px; }
+.ta-switch { display: flex; align-items: center; justify-content: space-between; min-height: 44px; font-size: 16px; }
+.ta-scale { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ta-scale input { width: 64px; text-align: center; }
+.ta-hint { margin: 0; min-height: 0; }
+.field[hidden] { display: none; }
+.notes li.ta-li { display: block; padding: 0; }
+.ta-box > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; align-items: baseline; cursor: pointer; list-style: none; }
+.ta-box > summary::-webkit-details-marker { display: none; }
+.ta-box > summary .v { grid-row: span 2; font-family: var(--mono); font-size: 24px; font-weight: 600; letter-spacing: -0.03em; }
+.ta-box > summary .v.crit { color: var(--crit); }
+.ta-box > summary .meta { grid-column: 2; font-size: 12px; color: var(--muted); }
+.ta-box > summary .ta-chev { grid-row: span 2; color: var(--muted); font-size: 22px; transition: transform 300ms cubic-bezier(.34, 1.56, .64, 1); }
+.ta-box[open] > summary .ta-chev { transform: rotate(90deg); }
+.ta-prov { color: var(--warn); font-weight: 600; }
+.eta-list { list-style: none; margin: 0 0 6px 0; padding: 4px 0 4px 14px; border-left: 2px solid var(--accent-soft); display: flex; flex-direction: column; gap: 2px; }
+.eta-list li.eta { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 4px 0; border: 0; }
+.eta-v { font-family: var(--mono); font-weight: 600; font-size: 16px; min-width: 2.4em; }
+.eta-v.crit { color: var(--crit); }
+.eta-what { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.ta-acts { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 0 10px 14px; }

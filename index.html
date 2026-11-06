@@ -600,7 +600,37 @@ td input[type="date"] { width: auto; }
     if (period === "s2") return all.filter(function (g) { return g.date > e; });
     return all;
   }
-  function currentGrades() { return ui.demo ? demoGrades() : state.grades.filter(function (g) { return !!sub(g.subject); }); }
+  /* TA : note = moyenne des ETA (ou barème en points sur les totaux), arrondie au demi-point. */
+  function taNote(def, etas) {
+    if (!etas.length) return null;
+    if (def && def.points) {
+      var p = 0, m = 0; etas.forEach(function (e) { p += +e.pts || 0; m += +e.max || 0; });
+      if (!m) return null;
+      var mul = isFinite(def.mul) ? +def.mul : 5, add = isFinite(def.add) ? +def.add : 1;
+      return Math.min(6, Math.max(1, roundHalf(mul * p / m + add)));
+    }
+    var t = 0; etas.forEach(function (e) { t += e.value; });
+    return roundHalf(t / etas.length);
+  }
+  function collapse(list) {
+    var defs = {}, groups = {}, out = [];
+    list.forEach(function (g) { if (g.kind === "tadef") defs[g.id] = g; });
+    list.forEach(function (g) {
+      if (g.kind === "tadef") return;
+      if (g.ta) { (groups[g.ta] = groups[g.ta] || []).push(g); return; }
+      out.push(g);
+    });
+    Object.keys(groups).forEach(function (tid) {
+      var e = groups[tid].slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1); });
+      var def = defs[tid] || { id: tid, subject: e[0].subject, label: "TA" }, v = taNote(def, e);
+      if (v == null) return;
+      var key = e.reduce(function (k, x) { return String(x.id) > k ? String(x.id) : k; }, String(def.id));
+      out.push({ id: "ta:" + tid, subject: def.subject, value: v, coef: 1, type: "ta", date: e[e.length - 1].date, label: def.label, sortKey: key,
+        taBlock: { def: def, etas: e, provisional: e.length < 3 } });
+    });
+    return out;
+  }
+  function currentGrades() { return collapse(ui.demo ? demoGrades() : state.grades.filter(function (g) { return !!sub(g.subject); })); }
 
   function roundTenth(x) { return x == null ? null : Math.floor(x * 10 + 0.5 + 1e-9) / 10; }
   // Note de bulletin ; en 11e (année entière), les disciplines d'examen prennent la note finale avec l'examen.
@@ -833,15 +863,33 @@ td input[type="date"] { width: auto; }
       '<text class="endlbl" x="' + Math.min(X(last.date), W - R - 4).toFixed(1) + '" y="' + (Y(last.avg) - 11).toFixed(1) + '" text-anchor="' + (X(last.date) > W - R - 30 ? "end" : "middle") + '">' + last.avg.toFixed(2) + '</text>' + xl + "</svg>";
   }
 
+  function fmtN(v) { return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100); }
+  function etaItem(e, def) {
+    var conf = ui.confirmDel === e.id, val = def && def.points ? (fmtN(+e.pts) + " / " + fmtN(+e.max) + " pts") : fmtN(e.value);
+    return '<li class="eta"><span class="eta-v ' + (!(def && def.points) && e.value < 4 ? "crit" : "") + '">' + val + '</span><span class="eta-what">' + (e.label ? esc(e.label) : "ETA") + ' <span class="muted">· ' + fmtDate(e.date) + '</span></span>' +
+      (ui.demo ? "" : '<span class="acts"><button class="link" data-edit="' + e.id + '">Modifier</button><button class="link danger" data-del="' + e.id + '">' + (conf ? "Confirmer ?" : "Supprimer") + '</button></span>') + '</li>';
+  }
   function noteItem(g) {
-      var s = sub(g.subject), conf = ui.confirmDel === g.id;
-      return '<li><span class="v ' + (g.value < 4 ? "crit" : "") + '">' + g.value + '</span><span class="what">' + esc(s ? s.name : g.subject) + (g.label && g.label !== "Exemple" ? " · " + esc(g.label) : "") + '</span>' +
-        '<span class="acts">' + (ui.demo ? "" : '<button class="link" data-edit="' + g.id + '">Modifier</button><button class="link danger" data-del="' + g.id + '">' + (conf ? "Confirmer ?" : "Supprimer") + '</button>') + '</span>' +
-        '<span class="meta">' + fmtDate(g.date) + " · coef " + fmtCoef(g.coef) + (g.type === "tp" ? " · TP" : "") + '</span></li>';
+    var s = sub(g.subject);
+    if (g.taBlock) {
+      var b = g.taBlock, tid = b.def.id, open = window.TA && TA.isOpen(tid);
+      return '<li class="ta-li"><details class="ta-box" data-ta="' + tid + '"' + (open ? " open" : "") + '><summary>' +
+        '<span class="v ' + (g.value < 4 ? "crit" : "") + '">' + fmtN(g.value) + '</span>' +
+        '<span class="what">' + esc(s ? s.name : g.subject) + ' · TA ' + esc(b.def.label || "") + '</span>' +
+        '<span class="meta">' + b.etas.length + ' ETA' + (b.provisional ? ' · <b class="ta-prov">provisoire</b>' : '') + (b.etas.length > 10 ? ' · <b class="ta-prov">plus de 10 ETA</b>' : '') + ' · ' + fmtDate(g.date) + (b.def.points ? ' · en points' : '') + '</span>' +
+        '<span class="ta-chev" aria-hidden="true">›</span></summary>' +
+        '<ul class="eta-list">' + b.etas.map(function (e) { return etaItem(e, b.def); }).join("") + '</ul>' +
+        (ui.demo ? "" : '<div class="ta-acts"><button type="button" class="link" data-ta-add="' + tid + '">＋ Ajouter un ETA</button><button type="button" class="link" data-ta-edit="' + tid + '">Renommer' + (b.def.points ? ' / barème' : '') + '</button><button type="button" class="link danger" data-ta-del="' + tid + '">Supprimer le TA</button></div>') +
+        '</details></li>';
     }
+    var conf = ui.confirmDel === g.id;
+    return '<li><span class="v ' + (g.value < 4 ? "crit" : "") + '">' + g.value + '</span><span class="what">' + esc(s ? s.name : g.subject) + (g.label && g.label !== "Exemple" ? " · " + esc(g.label) : "") + '</span>' +
+      '<span class="acts">' + (ui.demo ? "" : '<button class="link" data-edit="' + g.id + '">Modifier</button><button class="link danger" data-del="' + g.id + '">' + (conf ? "Confirmer ?" : "Supprimer") + '</button>') + '</span>' +
+      '<span class="meta">' + fmtDate(g.date) + (g.type === "ta" ? " · TA" : " · TS") + '</span></li>';
+  }
 
   function renderNotes(notes) {
-    var sorted = notes.slice().sort(function (a, b) { var x = String(a.id), y = String(b.id); return x < y ? 1 : x > y ? -1 : 0; });
+    var sorted = notes.slice().sort(function (a, b) { var x = String(a.sortKey || a.id), y = String(b.sortKey || b.id); return x < y ? 1 : x > y ? -1 : 0; });
     var shown = ui.showAll ? sorted : sorted.slice(0, 8);
     $("#notes").innerHTML = shown.length ? shown.map(noteItem).join("") : '<li class="empty" style="display:block;border:0">Aucune note pour l\'instant. Ajoute la première avec le formulaire, ou regarde un exemple.<div class="btns" style="margin-top:10px"><button type="button" class="btn-ghost" id="demo-on">Voir avec des notes d\'exemple</button></div></li>';
     $("#more").hidden = sorted.length <= 8;
@@ -935,6 +983,7 @@ td input[type="date"] { width: auto; }
     if (window.FX) FX.rendered();
     if (window.Onboard) Onboard.refresh();
     if (window.VPExam) VPExam.render();
+    if (window.TA) TA.render();
   }
 
   /* ---------- Persistance ---------- */
@@ -944,6 +993,7 @@ td input[type="date"] { width: auto; }
   }
   function persist() {
     try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+    if (window.Sync) Sync.changed();
     if (window.Sync) Sync.changed();
     dirty = true; clearTimeout(timer); setStatus(ref ? "saving" : "local");
     timer = setTimeout(flush, 500);
@@ -971,6 +1021,7 @@ td input[type="date"] { width: auto; }
     ui.editing = null; $("#f-val").value = ""; $("#f-label").value = ""; $("#f-coef").value = "1"; $("#f-type").value = "test"; $("#f-date").value = todayISO();
     $("#f-submit").textContent = "Ajouter"; $("#f-cancel").hidden = true; $("#f-msg").textContent = "";
     $("#h-add").textContent = "Ajouter une note";
+    if (window.TA) TA.reset();
   }
   function playDone(title, g) {
     var panel = $("#view-add .panel"), d = $("#done");
@@ -1010,7 +1061,7 @@ td input[type="date"] { width: auto; }
     var t = e.target;
     if (t.id === "demo-on") { ui.demo = true; render(); return; }
     if (t.dataset.del) {
-      if (ui.confirmDel === t.dataset.del) { state.grades = state.grades.filter(function (g) { return g.id !== t.dataset.del; }); ui.confirmDel = null; persist(); if (window.FX) FX.haptic("heavy"); }
+      if (ui.confirmDel === t.dataset.del) { var gone = state.grades.filter(function (g) { return g.id === t.dataset.del; })[0]; state.grades = state.grades.filter(function (g) { return g.id !== t.dataset.del; }); if (gone && gone.ta && !state.grades.some(function (g) { return g.ta === gone.ta; })) state.grades = state.grades.filter(function (g) { return g.id !== gone.ta; }); ui.confirmDel = null; persist(); if (window.FX) FX.haptic("heavy"); }
       else { ui.confirmDel = t.dataset.del; if (window.FX) FX.haptic("warn"); }
       render();
     }
@@ -1018,7 +1069,8 @@ td input[type="date"] { width: auto; }
       var g = state.grades.filter(function (x) { return x.id === t.dataset.edit; })[0]; if (!g) return;
       ui.editing = g.id; $("#f-subj").value = g.subject; $("#f-val").value = g.value; $("#f-date").value = g.date; $("#f-coef").value = fmtCoef(g.coef);
       $("#f-type").value = g.type || "test"; $("#f-label").value = g.label || "";
-      $("#f-submit").textContent = "Enregistrer"; $("#f-cancel").hidden = false; $("#h-add").textContent = "Modifier la note";
+      $("#f-submit").textContent = "Enregistrer"; $("#f-cancel").hidden = false; $("#h-add").textContent = g.ta ? "Modifier l'ETA" : "Modifier la note";
+      if (window.TA) TA.onEdit(g);
       ui.detail = null; renderDetail(); setView("add");
     }
   }
@@ -1096,7 +1148,16 @@ td input[type="date"] { width: auto; }
     get: function () { return clone(state); },
     profile: function () { return state.cfg.profile; },
     subjects: function () { return state.cfg.subjects.slice(); },
-    avg: function (id) { return subjAvg(id, state.grades.filter(function (g) { return !!sub(g.subject); })).avg; },
+    avg: function (id) { return subjAvg(id, collapse(state.grades.filter(function (g) { return !!sub(g.subject); }))).avg; },
+    records: function () { return state.grades.slice(); },
+    editing: function () { return ui.editing; },
+    upsert: function (recs, title, shown) {
+      recs.forEach(function (r) { var k = -1; state.grades.forEach(function (x, i) { if (x.id === r.id) k = i; }); if (k >= 0) state.grades[k] = r; else state.grades.push(r); });
+      ui.flash = recs[recs.length - 1].subject; resetForm(); persist(); fillSelects(); render();
+      if (title) playDone(title, shown || recs[recs.length - 1]);
+    },
+    remove: function (ids) { state.grades = state.grades.filter(function (g) { return ids.indexOf(g.id) < 0; }); persist(); render(); },
+    taNote: taNote,
     rerender: function () { render(); },
     grades: function () { return state.grades.slice(); },
     setProfile: function (prof) {
@@ -1129,8 +1190,10 @@ td input[type="date"] { width: auto; }
 })();
 </script>
 <script src="vp.js"></script>
+<script src="ta.js"></script>
 <script src="motion.js"></script>
 <script src="fx.js"></script>
+<script src="sync.js"></script>
 <script src="sync.js"></script>
 <script src="onboard.js"></script>
 </body></html>

@@ -878,7 +878,7 @@ td input[type="date"] { width: auto; }
         '<span class="what">' + esc(s ? s.name : g.subject) + ' · TA ' + esc(b.def.label || "") + '</span>' +
         '<span class="meta">' + b.etas.length + ' ETA' + (b.provisional ? ' · <b class="ta-prov">provisoire</b>' : '') + (b.etas.length > 10 ? ' · <b class="ta-prov">plus de 10 ETA</b>' : '') + ' · ' + fmtDate(g.date) + (b.def.points ? ' · en points' : '') + '</span>' +
         '<span class="ta-chev" aria-hidden="true">›</span></summary>' +
-        '<ul class="eta-list">' + b.etas.map(function (e) { return etaItem(e, b.def); }).join("") + '</ul>' +
+        '<ul class="eta-list">' + b.etas.slice().reverse().map(function (e) { return etaItem(e, b.def); }).join("") + '</ul>' +
         (ui.demo ? "" : '<div class="ta-acts"><button type="button" class="link" data-ta-add="' + tid + '">＋ Ajouter un ETA</button><button type="button" class="link" data-ta-edit="' + tid + '">Renommer' + (b.def.points ? ' / barème' : '') + '</button><button type="button" class="link danger" data-ta-del="' + tid + '">Supprimer le TA</button></div>') +
         '</details></li>';
     }
@@ -889,7 +889,7 @@ td input[type="date"] { width: auto; }
   }
 
   function renderNotes(notes) {
-    var sorted = notes.slice().sort(function (a, b) { var x = String(a.sortKey || a.id), y = String(b.sortKey || b.id); return x < y ? 1 : x > y ? -1 : 0; });
+    var sorted = notes.slice().sort(function (a, b) { if (a.date !== b.date) return a.date < b.date ? 1 : -1; var x = String(a.sortKey || a.id), y = String(b.sortKey || b.id); return x < y ? 1 : x > y ? -1 : 0; });
     var shown = ui.showAll ? sorted : sorted.slice(0, 8);
     $("#notes").innerHTML = shown.length ? shown.map(noteItem).join("") : '<li class="empty" style="display:block;border:0">Aucune note pour l\'instant. Ajoute la première avec le formulaire, ou regarde un exemple.<div class="btns" style="margin-top:10px"><button type="button" class="btn-ghost" id="demo-on">Voir avec des notes d\'exemple</button></div></li>';
     $("#more").hidden = sorted.length <= 8;
@@ -903,7 +903,7 @@ td input[type="date"] { width: auto; }
     var s = ui.detail ? sub(ui.detail) : null;
     if (!s) { ui.detail = null; el.hidden = true; document.body.style.overflow = ""; return; }
     var all = currentGrades(), ids = s.parts || [s.id];
-    var mine = all.filter(function (g) { return ids.indexOf(g.subject) >= 0; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    var mine = all.filter(function (g) { return ids.indexOf(g.subject) >= 0; }).sort(function (a, b) { if (a.date !== b.date) return a.date < b.date ? 1 : -1; var x = String(a.sortKey || a.id), y = String(b.sortKey || b.id); return x < y ? 1 : x > y ? -1 : 0; });
     var tiles = [["year", "Année"], ["s1", "Semestre 1"], ["s2", "Semestre 2"]].map(function (p) {
       var a = subjAvg(s.id, periodNotes(all, p[0])), b = roundHalf(a.avg);
       return '<div class="tile"><span class="lbl">' + p[1] + '</span><span class="num ' + tone(b) + '">' + fmtB(b) + '</span><span class="sub">' + (a.avg != null ? "exacte " + fmtAvg(a.avg) + " · " : "") + a.n + " note" + (a.n > 1 ? "s" : "") + '</span></div>';

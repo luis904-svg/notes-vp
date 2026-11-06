@@ -1,5 +1,5 @@
 /* Hors-ligne : la page vient du réseau si possible, sinon du cache ; le reste du cache d'abord. */
-var V = "notesvp-v3";
+var V = "notesvp-v4";
 var ASSETS = ["./", "index.html", "fx.css", "vp.css", "fx.js", "grid.js", "vp.js", "ta.js", "sync.js", "onboard.js", "motion.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(V).then(function (c) { return c.addAll(ASSETS.map(function (u) { return new Request(u, { cache: "reload" }); })); }).then(function () { return self.skipWaiting(); }));

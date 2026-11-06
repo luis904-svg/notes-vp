@@ -944,6 +944,7 @@ td input[type="date"] { width: auto; }
   }
   function persist() {
     try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+    if (window.Sync) Sync.changed();
     dirty = true; clearTimeout(timer); setStatus(ref ? "saving" : "local");
     timer = setTimeout(flush, 500);
   }
@@ -1130,5 +1131,6 @@ td input[type="date"] { width: auto; }
 <script src="vp.js"></script>
 <script src="motion.js"></script>
 <script src="fx.js"></script>
+<script src="sync.js"></script>
 <script src="onboard.js"></script>
 </body></html>

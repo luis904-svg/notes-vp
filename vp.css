@@ -24,3 +24,7 @@
 .exam-out .mono { font-size: 20px; font-weight: 600; }
 .exam-final.crit { color: var(--crit); }
 @media (max-width: 520px) { .exam-fields { grid-template-columns: 1fr 1fr; } .exam-out { flex-direction: row; justify-content: space-between; grid-column: span 2; } }
+
+/* Synchronisation */
+.sy-code { font-size: 22px; font-weight: 600; letter-spacing: 0.06em; padding: 12px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); text-align: center; user-select: all; -webkit-user-select: all; }
+.ob-sync { margin-top: 18px; font-size: 16px; }

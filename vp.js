@@ -6,7 +6,7 @@
   var KEY = "notesvp.exams";
   var exams = {};
   try { exams = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { exams = {}; }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(exams)); } catch (e) {} }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(exams)); } catch (e) {} if (window.Sync) Sync.changed(); }
   function half(x) { return Math.floor(x * 2 + 0.5 + 1e-9) / 2; }
   function tenth(x) { return Math.floor(x * 10 + 0.5 + 1e-9) / 10; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -62,5 +62,5 @@
       }).join("") + '</div>';
   }
 
-  window.VPExam = { exam: exam, final: final, render: render };
+  window.VPExam = { exam: exam, final: final, render: render, reload: function () { try { exams = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { exams = {}; } } };
 })();

@@ -126,3 +126,12 @@ body.ob-open .tabbar { display: none; }
 button.is-pressed { transform: scale(.94); transition: transform 90ms ease-out; }
 .card[data-subj].is-pressed { transform: scale(.97); transition-duration: 90ms; }
 .ob-row.is-pressed { background: var(--fill); transform: none; }
+
+/* Haut de l'écran sur iPhone : la barre d'état (heure, batterie) est peinte par iOS dans la couleur
+   theme-color (#F5F5F7). Le haut de la page reste de cette même couleur unie, et le dégradé
+   n'apparaît qu'en fondu plus bas : plus de bande qui fait contraste. */
+.bgfx, .ob::before {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 24px, #000 180px);
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 24px, #000 180px);
+}
+body::before { background: var(--bg); }

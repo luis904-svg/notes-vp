@@ -984,6 +984,7 @@ td input[type="date"] { width: auto; }
     if (window.Onboard) Onboard.refresh();
     if (window.VPExam) VPExam.render();
     if (window.TA) TA.render();
+    if (window.Cert) Cert.render();
   }
 
   /* ---------- Persistance ---------- */
@@ -993,7 +994,6 @@ td input[type="date"] { width: auto; }
   }
   function persist() {
     try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
-    if (window.Sync) Sync.changed();
     if (window.Sync) Sync.changed();
     dirty = true; clearTimeout(timer); setStatus(ref ? "saving" : "local");
     timer = setTimeout(flush, 500);
@@ -1160,6 +1160,9 @@ td input[type="date"] { width: auto; }
     taNote: taNote,
     rerender: function () { render(); },
     grades: function () { return state.grades.slice(); },
+    subjectsAll: function () { return state.cfg.subjects.slice(); },
+    annualAvg: function (id) { return sub(id) ? subjAvg(id, state.grades.filter(function (g) { return !!sub(g.subject); })).avg : null; },
+    redraw: function () { render(); },
     setProfile: function (prof) {
       state = normalize({ cfg: { s1End: state.cfg.s1End, profile: prof, subjects: state.cfg.subjects }, grades: state.grades });
       ui.chartSubj = "__all"; ui.detail = null; fillSelects(); renderSettings(); persist(); render();
@@ -1193,7 +1196,6 @@ td input[type="date"] { width: auto; }
 <script src="ta.js"></script>
 <script src="motion.js"></script>
 <script src="fx.js"></script>
-<script src="sync.js"></script>
 <script src="sync.js"></script>
 <script src="onboard.js"></script>
 </body></html>

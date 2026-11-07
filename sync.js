@@ -112,7 +112,14 @@
   function req(method, body) {
     return fetch(SYNC_URL.replace(/\/$/, "") + "/v1/" + vaultId, {
       method: method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, cache: "no-store"
-    }).then(function (r) { return r.json().then(function (j) { j.status = r.status; return j; }); });
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        j.status = r.status;
+        // Serveur occupé ou refus de taille : erreur (pas de nouvel essai immédiat, pas de faux « à jour »).
+        if (r.status === 429 || r.status === 413 || r.status >= 500) { var e = new Error("http " + r.status); e.name = "ServerRefused"; throw e; }
+        return j;
+      });
+    });
   }
   function cycle() {
     if (!meta.code || !SYNC_URL) return Promise.resolve();
